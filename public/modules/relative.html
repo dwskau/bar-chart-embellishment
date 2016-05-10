@@ -1,0 +1,165 @@
+<style type="text/css">input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    /* display: none; <- Crashes Chrome on hover */
+    -webkit-appearance: none;
+    margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
+}
+#next-chart {
+    float: right;
+  }
+
+  #prog {
+    color: #888888;
+  }
+</style>
+<div id="preSam">
+
+<p id="prog">
+<i>Study progress:</i>
+<svg id="progress">
+</svg>
+</p>
+
+<p id="question">
+</p>
+<input id="chart-response" name="chart-response" type="number" name="quantity" min="0" autofocus onkeydown="if (event.keyCode == 13) document.getElementById('next-chart').click()">%
+
+<p>
+&nbsp;
+</p>
+
+<div>
+<svg id="canvas">
+</svg>
+</div>
+
+<button id="next-chart" type="button">Next</button>
+
+</div>
+
+<script type="text/javascript">
+(function() {
+  experimentr.startTimer('trials');
+
+  var data = {};
+  var numTrials = 56;
+  var trialCounter = 0;
+  done = [false, false, false, false, false, false, false];
+  position = null;
+  var currentData = [],
+      currentLabel = [];
+//  var condition = rand //
+
+  init();
+
+  function init() {
+    // Hiding main next button while trials are going on
+    experimentr.hideNext();
+
+    // next-chart button behavior; should load next chart and store data
+    d3.select('#next-chart').on('click', function() {
+
+      // store response
+      data['ans-trial-' + currentTrial] = d3.select('#chart-response').property('value');
+
+      // check if end of trials
+      validate();
+    });
+
+    // on input change, enable next chart
+    d3.select('#chart-response').on('keyup', function() { 
+      d3.select('#next-chart').attr('disabled', null);
+    });
+
+    // start first trial
+    trial();
+  }
+
+  function trial() {
+    experimentr.startTimer('time-trial-' + currentTrial);
+    var labels = ["A", "B", "C"];
+    // choose new data
+    currentData = makeData();
+    var currentType = chooseType(trialCounter, participantCount, numTrials / 7);
+
+    // update progress
+    drawProgBar("#progress", currentTrial, totalTrials);
+
+    // choose question
+    currentLabel = setQuestion(labels, currentData);
+
+    // remove chart
+    d3.select('#chart').remove();
+    d3.selectAll("#clip").remove();
+    // draw chart
+    drawBarChart("#canvas", currentType, currentData, labels, false);
+
+    // store chart parameters
+    if (Math.abs(currentLabel[0] - currentLabel[1]) == 1) {
+      data['adjacent-' + currentTrial] = true;
+    }
+    else {
+      data['adjacent-' + currentTrial] = false;
+    }
+    data['number-in-series-' + currentTrial] = trialCounter % (numTrials / 7);
+    data['number-in-section-' + currentTrial] = trialCounter;
+    data['question-type-' + currentTrial] = "relative";
+    data['chart-embellishment-' + currentTrial] = currentType;
+    data['question-trial-' + currentTrial] = "what percentage is " + labels[currentLabel[0]] + " of " + labels[currentLabel[1]];
+    data['correctAns-trial-' + currentTrial] = (currentData[currentLabel[0]] / currentData[currentLabel[1]]) * 100;
+    data['data-trial-' + currentTrial] = currentData;
+
+    // clear response
+    d3.select('#chart-response').property('value', '');
+    // disable next button
+    d3.select('#next-chart').attr('disabled', 'true');
+  }
+
+  // Validate checks if all data is in for this module
+  // in this case, trialCounter should === numTrials
+  function validate() {
+    data['bars-' + currentTrial] = currentLabel;
+    data['judged-true-' + currentTrial] = Number(d3.select('#chart-response').property('value')) - ((currentData[currentLabel[0]] / currentData[currentLabel[1]]) * 100);
+    data['ans-percentage-diff-' + currentTrial] = (Number(d3.select('#chart-response').property('value')) - ((currentData[currentLabel[0]] / currentData[currentLabel[1]]) * 100)) / (((currentData[currentLabel[0]] / currentData[currentLabel[1]]) * 100));
+    data['log-error-' + currentTrial] = Math.log2(Math.abs((Number(d3.select('#chart-response').property('value')) - ((currentData[currentLabel[0]] / currentData[currentLabel[1]]) * 100))) + 1 / 8)
+
+    if(trialCounter === numTrials - 1) {
+      // end module timer
+      experimentr.endTimer('trials');
+      // add data & send to server
+      experimentr.addData(data);
+      // go to next module
+      currentTrial++;
+      experimentr.next();
+    } else {
+      // enable next chart button
+      experimentr.endTimer('time-trial-'+currentTrial);
+      currentTrial++;
+      trialCounter++;
+      trial();
+    }
+  }
+
+  function setQuestion(labels, data) {
+    var label1 = randomLabel(labels);
+    var label2 = randomLabel(labels);
+    while(label2==label1) {
+      label2 = randomLabel(labels);
+    }
+
+    if(data[label1]>data[label2]) {
+      var labelTemp = label1;
+      label1 = label2;
+      label2 = labelTemp;
+    }
+    d3.select('#question')
+      .text(function() {return "In the chart below, what percentage is " + labels[label1] + " of " + labels[label2] + "?"})
+    return [label1, label2];
+  }
+
+  function randomLabel(labels) {
+    return Math.floor(Math.random() * labels.length);
+  }
+
+}());
+</script>

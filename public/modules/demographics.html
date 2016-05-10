@@ -1,0 +1,145 @@
+
+<div id="demographics">
+<h5> <span id="status"></span> </h5>
+<h1 id="sizeWarning" style="color: #FF0000"></h1>
+<p id="demoinstr">
+<strong>Please fill out the following demographics form.</strong>
+</p>
+
+<div id="age"><strong>Your age:</strong>
+    <div id="ages">
+        <input type="radio" id="a1" name="age" value="18-24"> 18-24<!-- <br> -->
+        <input type="radio" id="a2" name="age" value="25-29"> 25-29<!-- <br> -->
+        <input type="radio" id="a2" name="age" value="30-39"> 30-39<!-- <br> -->
+        <input type="radio" id="a3" name="age" value="40-49"> 40-49<!-- <br> -->
+        <input type="radio" id="a4" name="age" value="50-59"> 50-59<!-- <br> -->
+        <input type="radio" id="a5" name="age" value="60+"> 60+<!-- <br> -->
+        <input type="radio" id="a6" name="age" value="Unspecified"> Unspecified
+    </div>
+</div>
+<br>
+<div id="sex"><strong>Your gender:</strong>
+    <div id="sexes">
+        <input type="radio" id="s1" name="sex" value="Male"> Male<!-- <br> -->
+        <input type="radio" id="s2" name="sex" value="Female"> Female<!-- <br> -->
+        <input type="radio" id="s3" name="sex" value="Unspecified"> Unspecified
+    </div>
+</div>
+<br>
+<div id="degree"><strong>Highest degree obtained:</strong>
+    <div id="degrees">
+        <input type="radio" id="d1" name="degree" value="High School"> High School<!-- <br> -->
+        <input type="radio" id="d2" name="degree" value="Bachelors"> Bachelors<!-- <br> -->
+        <input type="radio" id="d3" name="degree" value="Masters"> Masters<!-- <br> -->
+        <input type="radio" id="d4" name="degree" value="PhD"> PhD<!-- <br> -->
+        <input type="radio" id="d5" name="degree" value="Other"> Other
+    </div>
+</div>
+<br>
+<div id="monitor"><strong>Your monitor size is closest to:</strong>
+    <div id="monitors">
+        <input type="radio" id="m4" name="monitor" value="9 or smaller">9" or smaller<!-- <br> -->
+        <input type="radio" id="m4" name="monitor" value=11>11"<!-- <br> -->
+        <input type="radio" id="m4" name="monitor" value=13>13"<!-- <br> -->
+        <input type="radio" id="m4" name="monitor" value=15>15"<!-- <br> -->
+        <input type="radio" id="m4" name="monitor" value=17>17"<!-- <br> -->
+        <input type="radio" id="m4" name="monitor" value=19>19"<!-- <br> -->
+        <input type="radio" id="m4" name="monitor" value=21>21"<!-- <br> -->
+        <input type="radio" id="m5" name="monitor" value="23 or larger">23" or larger<!-- <br> -->
+        <input type="radio" id="m5" name="monitor" value="dontknow">Not sure
+    </div>
+</div>
+<br>
+</div>
+
+<script> 
+(function() {
+  var data = {};
+
+  window.onresize=function() {
+    console.log("resize");
+    validate();
+  };
+
+  validate();
+
+  data.participantCount = participantCount;
+  data.browser = getBrowser();
+  data.browserVersion = getBrowserVersion();
+  data.screenHeight = window.screen.availHeight;
+  data.screenWidth = window.screen.availWidth;
+
+  experimentr.startTimer('demog');
+
+  d3.selectAll('input')
+  .filter(function(d) { return this.name === 'age' ? this : null; })
+  .on('change', function() { data.age = this.value; validate(); });
+  
+  d3.selectAll('input')
+  .filter(function(d) { return this.name === 'sex' ? this : null; })
+  .on('change', function() { data.sex = this.value; validate(); });
+  
+  d3.selectAll('input')
+  .filter(function(d) { return this.name === 'degree' ? this : null; })
+  .on('change', function() { data.degree = this.value; validate(); });
+  
+  d3.selectAll('input')
+  .filter(function(d) { return this.name === 'monitor' ? this : null; })
+  .on('change', function() { data.monitor = this.value; validate(); });
+  
+  function validate() {
+	  if(checkWindowSize()) {
+      if(data.age && data.sex && data.degree && data.monitor){
+          experimentr.endTimer('demog');
+          experimentr.addData(data);
+          experimentr.release();
+      }
+    }
+	}
+
+  function checkWindowSize() {
+    data.windowWidth = window.innerWidth;
+    data.windowHeight = window.innerHeight;
+    if(data.windowWidth>=600 && data.windowHeight>=540)
+    {
+      d3.select('#sizeWarning').text(null);
+      return true;
+    }
+    else
+    {
+      d3.select('#sizeWarning').text("This window must be at least 600 x 540 pixels to complete this study.");
+      return false;
+    }
+  }
+
+  function getBrowser() {
+    var ua=navigator.userAgent,tem,M=ua.match(/(opera|chrome|safari|firefox|msie|trident(?=\/))\/?\s*(\d+)/i) || []; 
+    if(/trident/i.test(M[1])){
+        tem=/\brv[ :]+(\d+)/g.exec(ua) || []; 
+        return 'IE '+(tem[1]||'');
+        }   
+    if(M[1]==='Chrome'){
+        tem=ua.match(/\bOPR\/(\d+)/)
+        if(tem!=null)   {return 'Opera '+tem[1];}
+        }   
+    M=M[2]? [M[1], M[2]]: [navigator.appName, navigator.appVersion, '-?'];
+    if((tem=ua.match(/version\/(\d+)/i))!=null) {M.splice(1,1,tem[1]);}
+    return M[0];
+  }
+
+  function getBrowserVersion() {
+    var ua=navigator.userAgent,tem,M=ua.match(/(opera|chrome|safari|firefox|msie|trident(?=\/))\/?\s*(\d+)/i) || [];                                                                                                                         
+    if(/trident/i.test(M[1])){
+        tem=/\brv[ :]+(\d+)/g.exec(ua) || [];
+        return 'IE '+(tem[1]||'');
+        }
+    if(M[1]==='Chrome'){
+        tem=ua.match(/\bOPR\/(\d+)/)
+        if(tem!=null)   {return 'Opera '+tem[1];}
+        }   
+    M=M[2]? [M[1], M[2]]: [navigator.appName, navigator.appVersion, '-?'];
+    if((tem=ua.match(/version\/(\d+)/i))!=null) {M.splice(1,1,tem[1]);}
+    return M[1];
+  }
+}());
+</script>

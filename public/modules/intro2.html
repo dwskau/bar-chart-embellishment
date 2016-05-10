@@ -1,0 +1,90 @@
+<style type="text/css">input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    /* display: none; <- Crashes Chrome on hover */
+    -webkit-appearance: none;
+    margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
+}
+#next {
+    float: right;
+  }
+</style>
+<div id="preSam">
+
+<p>
+Study progress:
+<svg id="progress">
+</svg>
+</p>
+
+<h2>
+Break
+</h2>
+
+<p>
+Congratulations, you finished part one!
+Feel free to take a quick break before you get started on part two.
+Remember the next questions are different from the questions for part one.
+</p>
+
+<p>
+To answer the questions, please enter your answer in the box above the chart.
+You may press 'Enter' or click the 'Next' button to submit your answer and proceed to the next chart.
+If your answers are wildly inaccurate, you will not receive compensation for this HIT.
+</p>
+
+<p>
+&nbsp;
+</p>
+
+<div>
+<svg id="canvas">
+</svg>
+</div>
+
+<button id="next" type="button">Next</button>
+
+</div>
+
+<script type="text/javascript">
+(function() {
+  experimentr.startTimer('trials');
+
+  var data = {};
+//  var condition = rand //
+
+  init();
+
+  function init() {
+    // Hiding main next button while trials are going on
+    experimentr.hideNext();
+
+    // next button behavior; should load next chart and store data
+    d3.select('#next').on('click', function() {
+
+      // check if end of trials
+      validate();
+    });
+
+    // start first trial
+    trial();
+  }
+
+  function trial() {
+    experimentr.startTimer('time-trial-' + currentTrial);
+
+    // update progress
+    drawProgBar("#progress", currentTrial, totalTrials);
+  }
+
+  // Validate checks if all data is in for this module
+  // in this case, trialCounter should === numTrials
+  function validate() {
+      // end module timer
+      experimentr.endTimer('trials');
+      // add data & send to server
+      experimentr.addData(data);
+      // go to next module
+      experimentr.next();
+  }
+}());
+</script>

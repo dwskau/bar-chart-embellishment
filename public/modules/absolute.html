@@ -1,0 +1,153 @@
+<style type="text/css">input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    /* display: none; <- Crashes Chrome on hover */
+    -webkit-appearance: none;
+    margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
+}
+#next-chart {
+    float: right;
+  }
+
+  #prog {
+    color: #888888;
+  }
+</style>
+<div id="preSam">
+
+<p id="prog">
+<i>Study progress:</i>
+<svg id="progress">
+</svg>
+</p>
+
+<p id="question">
+</p>
+<input id="chart-response" name="chart-response" type="number" name="quantity" min="0" autofocus onkeydown="if (event.keyCode == 13) document.getElementById('next-chart').click()">
+
+<p>
+&nbsp;
+</p>
+
+<div>
+<svg id="canvas">
+</svg>
+</div>
+
+<button id="next-chart" type="button">Next</button>
+
+</div>
+
+<script type="text/javascript">
+(function() {
+  experimentr.startTimer('trials');
+
+  var data = {};
+  var numTrials = 35;
+  var trialCounter = 0;
+  done = [false, false, false, false, false, false, false];
+  position = null;
+//  var condition = rand //
+
+  init();
+
+  function init() {
+    // Hiding main next button while trials are going on
+    experimentr.hideNext();
+
+    // next-chart button behavior; should load next chart and store data
+    d3.select('#next-chart').on('click', function() {
+
+      // store response
+      data['ans-trial-' + currentTrial] = d3.select('#chart-response').property('value');
+
+      // check if end of trials
+      validate();
+    });
+
+    // on input change, enable next chart
+    d3.select('#chart-response').on('keyup', function() { 
+      d3.select('#next-chart').attr('disabled', null);
+    });
+
+    // start first trial
+    trial();
+  }
+
+  function trial() {
+    experimentr.startTimer('time-trial-' + currentTrial);
+    var labels = ["A", "B", "C"];
+    // choose new data
+    currentData = makeData();
+    var currentType = chooseType(trialCounter, participantCount, numTrials / 7);
+
+    // update progress
+    drawProgBar("#progress", currentTrial, totalTrials);
+
+    // choose question
+    currentLabel = setQuestion(labels);
+
+    // remove chart
+    d3.select('#chart').remove();
+    d3.selectAll("#clip").remove();
+    // draw chart
+    drawBarChart("#canvas", currentType, currentData, labels, true);
+
+    // store chart parameters
+    if(currentData[currentLabel] == Math.max.apply(null,currentData)) {
+      data['max-mid-min-' + currentTrial] = "max";
+    }
+    else if (currentData[currentLabel] == Math.min.apply(null,currentData)) {
+      data['max-mid-min-' + currentTrial] = "min";
+    }
+    else {
+      data['max-mid-min-' + currentTrial] = "mid";
+    };
+    data['number-in-series-' + currentTrial] = trialCounter % (numTrials / 7);
+    data['number-in-section-' + currentTrial] = trialCounter;
+    data['question-type-' + currentTrial] = "absolute";
+    data['chart-embellishment-' + currentTrial] = currentType;
+    data['question-trial-' + currentTrial] = "value of " + labels[currentLabel];
+    data['correctAns-trial-' + currentTrial] = currentData[currentLabel];
+    data['data-trial-' + currentTrial] = currentData;
+
+
+    // clear response
+    d3.select('#chart-response').property('value', '');
+    // disable next button
+    d3.select('#next-chart').attr('disabled', 'true');
+  }
+
+  // Validate checks if all data is in for this module
+  // in this case, trialCounter should === numTrials
+  function validate() {
+    data['bar-' + currentTrial] = currentLabel;
+    data['judged-true-' + currentTrial] = Number(d3.select('#chart-response').property('value')) - currentData[currentLabel];
+    data['ans-percentage-diff-' + currentTrial] = (Number(d3.select('#chart-response').property('value')) - currentData[currentLabel]) / currentData[currentLabel];
+    data['log-error-' + currentTrial] = Math.log2(Math.abs(Number(d3.select('#chart-response').property('value')) - currentData[currentLabel]) + 1 / 8);
+
+    if(trialCounter === numTrials - 1) {
+      // end module timer
+      experimentr.endTimer('trials');
+      // add data & send to server
+      experimentr.addData(data);
+      // go to next module
+      currentTrial++;
+      experimentr.next();
+    } else {
+      // enable next chart button
+      experimentr.endTimer('time-trial-'+currentTrial);
+      currentTrial++;
+      trialCounter++;
+      trial();
+    }
+  }
+
+  function setQuestion(labels) {
+    var label = Math.floor(Math.random() * labels.length);
+    d3.select('#question')
+      .text(function() {return "In the chart below, what is the value of " + labels[label] + "?"})
+    return label;
+  }
+
+}());
+</script>

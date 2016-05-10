@@ -1,0 +1,52 @@
+<div id="debrief">
+
+<p>
+<strong>Please copy and paste the following code back on Mechanical Turk before closing this window:</strong>
+</p>
+<h2 id="postId"></h2>
+
+<p>
+This study was designed to test the effectiveness of different types of chart embellishment. Certain chart embellishments may make the data harder or easier to read, and this study should help discover what effect each embellishment type has.
+</p>
+
+<p>
+Thank you again for your participation. Feel free submit any additional comments below.
+</p>
+
+<textarea name="textarea" rows="10" cols="50" autofocus>Leave feedback here</textarea>
+<br>
+<button id="submitComments" disabled="true" type="button">Submit</button>
+<br>
+<div id="submitFeedback"></div>
+
+</div>
+
+<style>
+</style>
+
+<script>
+(function() {
+  var postId  = experimentr.postId
+    , data    = {};
+
+  d3.select("#postId").text(postId);
+
+  data.postId = postId;
+  experimentr.addData(data);
+
+  var comments = d3.select('#debrief').select('textarea')
+    .on('keypress', function() { d3.select('#submitComments').attr('disabled', null); })
+    .on('blur', function() { d3.select('#submitComments').attr('disabled', null); });
+
+  d3.select('#submitComments')
+    .on('click', function () { data.comments = comments.property('value'); validate(); });
+
+  function validate() {
+    if( data.comments ) {
+      experimentr.addData(data);
+      d3.select('#submitComments').attr('disabled', 'true');
+      d3.select('#submitFeedback').text('Submit Successful');
+    }
+  }
+}());
+</script>

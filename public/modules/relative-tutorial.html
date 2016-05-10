@@ -1,0 +1,141 @@
+<style type="text/css">input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    /* display: none; <- Crashes Chrome on hover */
+    -webkit-appearance: none;
+    margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
+}
+#next-chart {
+    float: right;
+  }
+</style>
+<div id="preSam">
+
+<p>
+Study progress:
+<svg id="progress">
+</svg>
+</p>
+
+<h2>
+Tutorial
+</h2>
+
+<p id="tutorial">
+To answer the following questions, please enter the correct value in the box below. For example, the correct answer for this question is 33. When you have entered your best estimate, click the 'Next' button to proceed to the next question. If your answers are wildly inaccurate, you will not receive compensation for this HIT.
+</p>
+
+<p id="question">
+</p>
+<input id="chart-response" name="chart-response" type="number" name="quantity" min="0">%
+
+<p>
+&nbsp;
+</p>
+
+<div>
+<svg id="canvas">
+</svg>
+</div>
+
+<button id="next-chart" type="button">Next</button>
+
+</div>
+
+<script type="text/javascript">
+(function() {
+  experimentr.startTimer('trials');
+
+  var data = {};
+//  var condition = rand //
+
+  init();
+
+  function init() {
+    // Hiding main next button while trials are going on
+    experimentr.hideNext();
+
+    // next-chart button behavior; should load next chart and store data
+    d3.select('#next-chart').on('click', function() {
+
+      // store response
+      data['ans-trial-relative-tutorial'] = d3.select('#chart-response').property('value');
+
+      // check if end of trials
+      validate();
+    });
+
+    // on input change, enable next chart
+    d3.select('#chart-response').on('keyup', function() { 
+      d3.select('#next-chart').attr('disabled', null);
+    });
+
+    // start first trial
+    trial();
+  }
+
+  function trial() {
+    experimentr.startTimer('time-trial-' + currentTrial);
+    var labels = ["A", "B", "C"];
+    // choose new data
+    var currentData = [20,60,40];
+    var axisMax = padAxis(currentData);
+    var currentType = chooseType();
+
+    // update progress
+    drawProgBar("#progress", currentTrial, totalTrials);
+
+    // choose question
+    var currentLabel = setQuestion(labels, currentData);
+
+    // remove chart
+    d3.select('#chart').remove();
+    d3.selectAll("#clip").remove();
+    // draw chart
+    drawBarChart("#canvas", currentType, currentData, labels, false);
+
+    // store chart parameters
+    // data['trialType-' + currentTrial] = "relative";
+    data['question-trial-relative-tutorial'] = "what percentage is A of B";
+    data['correctAns-trial-relative-tutorial'] = 33;
+    data['data-trial-relative tutorial'] = currentData;
+
+    // clear response
+    d3.select('#chart-response').property('value', '');
+    // disable next button
+    d3.select('#next-chart').attr('disabled', 'true');
+  }
+
+  // Validate checks if all data is in for this module
+  // in this case, trialCounter should === numTrials
+  function validate() {
+      // end module timer
+      experimentr.endTimer('trials');
+      // add data & send to server
+      experimentr.addData(data);
+      // go to next module
+      experimentr.next();
+  }
+
+  function setQuestion(labels, data) {
+    var label1 = randomLabel(labels);
+    var label2 = randomLabel(labels);
+    while(label2==label1) {
+      label2 = randomLabel(labels);
+    }
+
+    if(data[label1]>data[label2]) {
+      var labelTemp = label1;
+      label1 = label2;
+      label2 = labelTemp;
+    }
+    d3.select('#question')
+      .text(function() {return "In the chart below, what percentage is A of B ?"})
+    return [label1, label2];
+  }
+
+  function randomLabel(labels) {
+    return Math.floor(Math.random() * labels.length);
+  }
+
+}());
+</script>
